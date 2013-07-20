@@ -17,23 +17,44 @@ class Parsluby
     def extract_inner(node, selector)
 
         if(selector.is_a?(Hash))
-            output = {}
+            output = Hash.new
             selector.each do |key, subselector|
-                #puts "-----------------------------"
-                #puts "key: "
-                #puts key
-                #puts "subselector: "
-                #puts subselector
                 extracted = extract_inner(node, subselector)
-                #puts "extracted: "
-                #puts extracted
+                output[key] = extracted
+            end
+            return output
+            selector.each do |key, subselector|
+                extracted = extract_inner(node, subselector)
                 output[key] = extracted
             end
             return output
 
+        elsif(selector.is_a?(Array))
+            output = Array.new
+            selector.each do |subselector|
+
+                begin
+                    node.css(subselector).each do |r|
+                        output.push(r.text)
+                    end
+                rescue Nokogiri::CSS::SyntaxError
+                    node.xpath(subselector).each do |r|
+                        output.push(r.text)
+                    end
+                end
+
+            end
+            return output
+
         else
-            node.search(selector).each do |r|
-                return r.text
+            begin
+                node.css(selector).each do |r|
+                    return r.text
+                end
+            rescue Nokogiri::CSS::SyntaxError
+                node.xpath(selector).each do |r|
+                    return r.text
+                end
             end
         end
     end
